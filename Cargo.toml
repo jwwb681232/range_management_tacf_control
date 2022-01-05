@@ -14,3 +14,5 @@ tokio = { version = "1", features = ["full"] }
 actix = "0.10"
 actix-web = "3"
 actix-web-actors = "3"
+
+redis = "0.21.4"

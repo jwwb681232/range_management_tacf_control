@@ -37,20 +37,24 @@ pub fn response_to_jsons(items:Vec<u8>) -> Vec<String> {
     let splited = one_line.split("}{").collect::<Vec<&str>>();
 
     for &item in splited.iter() {
-        let first_str = item.chars().nth(0).unwrap();
-        let last_str = item.chars().last().unwrap();
+        let mut will_push_str  = item.to_string();
+        let first_str = item.chars().nth(0).unwrap().to_string();
+        let last_str = item.chars().last().unwrap().to_string();
 
-        if first_str.to_string() != "{".to_string() {
-            let json_string = format!("{}{}","{".to_string(),item.to_string());
-            jsons_strings.push(json_string);
-
-        }else if last_str.to_string() != "}".to_string() {
-            let json_string = format!("{}{}",item.to_string(),"}".to_string());
-            jsons_strings.push(json_string);
-
-        }else{
-            jsons_strings.push(item.to_string());
+        if first_str != "{".to_string() && last_str != "}".to_string() {
+            will_push_str = "{".to_string() + &item + "}";
         }
+
+        if first_str == "{".to_string() && last_str != "}".to_string() {
+            will_push_str = item.to_owned() + "}";
+        }
+
+        if first_str != "{".to_string() && last_str == "}".to_string() {
+            will_push_str = "{".to_string() + &item;
+        }
+
+        jsons_strings.push(will_push_str);
+
     }
 
     jsons_strings
