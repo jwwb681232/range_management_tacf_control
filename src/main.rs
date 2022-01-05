@@ -1,4 +1,6 @@
 use std::io::prelude::*;
+#[macro_use]
+extern crate serde_json;
 
 use std::thread::sleep;
 use std::time::Duration;
