@@ -1,7 +1,4 @@
-use std::fmt::format;
-use serde_json::json;
-
-pub fn response_to_jsons(items:Vec<u8>) -> String {
+pub fn response_to_jsons(items:Vec<u8>) -> Vec<String> {
     let mut jsons_strings:Vec<String> = vec![];
 
     let mut clear_items = vec![];
@@ -45,23 +42,16 @@ pub fn response_to_jsons(items:Vec<u8>) -> String {
 
         if first_str.to_string() != "{".to_string() {
             let json_string = format!("{}{}","{".to_string(),item.to_string());
-            println!("{:#?}",json!(json_string.as_str()));
             jsons_strings.push(json_string);
-
-
 
         }else if last_str.to_string() != "}".to_string() {
             let json_string = format!("{}{}",item.to_string(),"}".to_string());
-            println!("{:#?}",json!(json_string.as_str()));
             jsons_strings.push(json_string);
-
 
         }else{
             jsons_strings.push(item.to_string());
         }
     }
 
-    println!("{:#?}",jsons_strings);
-
-    one_line
+    jsons_strings
 }
