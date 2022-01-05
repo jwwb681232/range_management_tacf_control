@@ -1,7 +1,6 @@
 use std::io::{Read, Write};
 use std::net::TcpStream;
 use serde_json::Value;
-use std::sync::mpsc::{self,Sender,Receiver};
 
 use actix::{Actor, StreamHandler};
 use actix_web::{web, App, Error, HttpRequest, HttpResponse, HttpServer};
