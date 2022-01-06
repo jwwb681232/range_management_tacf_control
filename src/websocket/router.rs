@@ -5,6 +5,7 @@ pub struct Router {
     pub(crate) sender: ws::Sender,
     pub(crate) inner: Box<dyn ws::Handler>,
 }
+
 impl ws::Handler for Router {
     fn on_shutdown(&mut self) {
         self.inner.on_shutdown()
@@ -40,6 +41,7 @@ impl ws::Handler for Router {
 }
 
 pub struct TacfReceiver;
+
 impl ws::Handler for TacfReceiver {
     fn on_open(&mut self, _: ws::Handshake) -> ws::Result<()> {
         Ok(())
@@ -50,6 +52,7 @@ impl ws::Handler for TacfReceiver {
     }
 
     fn on_close(&mut self, _: ws::CloseCode, _: &str) {
+
     }
 }
 
@@ -57,6 +60,7 @@ impl ws::Handler for TacfReceiver {
 pub struct TacfControl {
     ws: ws::Sender,
 }
+
 impl ws::Handler for TacfControl {
     fn on_open(&mut self, _: ws::Handshake) -> ws::Result<()> {
         Ok(())
@@ -74,17 +78,17 @@ impl ws::Handler for TacfControl {
         if msg.to_string() != "RequestScenarioList".to_string() {
             self.ws.broadcast(msg).unwrap();
             //self.ws.close(ws::CloseCode::Normal).unwrap()
-
         }
         Ok(())
     }
 
-    fn on_close(&mut self, _: ws::CloseCode, _: &str) {
-
+    fn on_close(&mut self, code: ws::CloseCode, _: &str)  {
+        self.ws.close(code).unwrap()
     }
 }
 
 pub struct NotFound;
+
 impl ws::Handler for NotFound {
     fn on_request(&mut self, req: &ws::Request) -> ws::Result<ws::Response> {
         let mut res = ws::Response::from_request(req)?;
