@@ -10,11 +10,11 @@ mod response;
 
 use std::io::{Read, Write};
 use std::net::TcpStream;
-use chrono::Local;
 use redis::Commands;
 use serde_json::Value;
 use crate::commands::{load_scenario, nop_ack, remote_controller_status, request_scenario_infos, request_scenario_list};
 use crate::response::response_to_jsons;
+use log::{Level, log};
 
 struct Router {
     sender: ws::Sender,
@@ -46,7 +46,7 @@ impl ws::Handler for Router {
         let out = self.sender.clone();
 
         match req.resource() {
-            "/" => self.inner = Box::new(NFCReceiver),
+            // "/" => self.inner = Box::new(TacfReceiver),
             "/tacf_control" => self.inner = Box::new(TacfControl { ws: out }),
             _ => self.inner = Box::new(NotFound),
         }
@@ -81,11 +81,14 @@ impl ws::Handler for TacfControl {
         let mut con = client.get_connection().unwrap();
         let _: () = con.publish("websocket_to_tacf", msg.to_string()).unwrap();
 
-        println!("Step 2: {}", Local::now().format("%Y-%m-%d %H:%M:%S"));
+        //println!("websocket send: {}", msg.to_string());
+        log!(Level::Warn, "websocket send: {}",  msg.to_string());
         //self.ws.broadcast(msg)
 
         if msg.to_string() != "RequestScenarioList".to_string() {
-            self.ws.broadcast(msg).unwrap()
+            self.ws.broadcast(msg).unwrap();
+            //self.ws.close(ws::CloseCode::Normal).unwrap()
+
         }
         Ok(())
     }
@@ -95,11 +98,10 @@ impl ws::Handler for TacfControl {
     }
 }
 
-struct NFCReceiver;
+struct TacfReceiver;
 
-impl ws::Handler for NFCReceiver {
+impl ws::Handler for TacfReceiver {
     fn on_open(&mut self, _: ws::Handshake) -> ws::Result<()> {
-        println!("Step 1: {}", Local::now().format("%Y-%m-%d %H:%M:%S"));
         Ok(())
     }
 
@@ -112,6 +114,7 @@ impl ws::Handler for NFCReceiver {
 }
 
 fn main() {
+    env_logger::init();
 
     //一个客户端专门从tacf_to_websocket 里取数据广播
     let inner_sender_thread = std::thread::spawn(||{
@@ -146,7 +149,7 @@ fn main() {
     ws::listen(format!("127.0.0.1:8084"), |out| {
         Router {
             sender: out,
-            inner: Box::new(NFCReceiver),
+            inner: Box::new(TacfReceiver),
         }
     }).unwrap();
 
@@ -212,19 +215,15 @@ fn tacf() -> std::io::Result<()> {
                 if decode_item["CommandId"] == 0 {
                     let input = nop_ack();
                     stream.write(&*input)?;
-                    println!("command 0 :{}", decode_item)
                 }
 
                 if decode_item["CommandId"] == 1001 {
-                    println!("command 1001 :{}", decode_item)
                 }
 
                 if decode_item["CommandId"] == 1002 {
-                    println!("command 1002 :{}", decode_item)
                 }
 
                 if decode_item["CommandId"] == 1003 {
-                    println!("command 1003 :{}", decode_item)
                 }
             }
         }
