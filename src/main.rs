@@ -47,7 +47,7 @@ impl ws::Handler for Router {
 
         match req.resource() {
             "/" => self.inner = Box::new(NFCReceiver),
-            "/sender" => self.inner = Box::new(NFCSender { ws: out }),
+            "/tacf_control" => self.inner = Box::new(TacfControl { ws: out }),
             _ => self.inner = Box::new(NotFound),
         }
 
@@ -67,11 +67,11 @@ impl ws::Handler for NotFound {
 }
 
 
-struct NFCSender {
+struct TacfControl {
     ws: ws::Sender,
 }
 
-impl ws::Handler for NFCSender {
+impl ws::Handler for TacfControl {
     fn on_open(&mut self, _: ws::Handshake) -> ws::Result<()> {
         Ok(())
     }
@@ -113,38 +113,36 @@ impl ws::Handler for NFCReceiver {
 
 fn main() {
 
-    ///一个客户端专门从tacf_to_websocket 里取数据广播
-    let sender_thread = std::thread::spawn(||{
-        let client = redis::Client::open("redis://127.0.0.1:6379").unwrap();
-        let mut con = client.get_connection().unwrap();
-        let mut pubsub = con.as_pubsub();
-        pubsub.subscribe("tacf_to_websocket").unwrap();
+    //一个客户端专门从tacf_to_websocket 里取数据广播
+    let inner_sender_thread = std::thread::spawn(||{
+        let mut tacf_to_websocket_con = redis::Client::open("redis://127.0.0.1:6379").unwrap().get_connection().unwrap();
+        let mut tacf_to_websocket_pubsub = tacf_to_websocket_con.as_pubsub();
+        tacf_to_websocket_pubsub.subscribe("tacf_to_websocket").unwrap();
 
         loop {
-            let msg = pubsub.get_message().unwrap();
+            let msg = tacf_to_websocket_pubsub.get_message().unwrap();
             let payload : String = msg.get_payload().unwrap();
 
-            ws::connect("ws://127.0.0.1:8084/sender", |out| {
-                let nfd_data = &payload;
-                out.send(nfd_data.to_owned()).unwrap();
+            ws::connect("ws://127.0.0.1:8084/tacf_control", move|out| {
+                out.send(payload.to_owned()).unwrap();
                 move |_| {
-                    out.close(ws::CloseCode::Normal);
+                    out.close(ws::CloseCode::Normal).unwrap();
                     Ok(())
                 }
             }).unwrap();
 
-            std::thread::sleep(std::time::Duration::from_millis(500));
+            //std::thread::sleep(std::time::Duration::from_millis(500));
         }
     });
 
 
-    ///tacf 数据交互
+    //tacf 数据交互
     let tacf_thread = std::thread::spawn(|| {
-        tacf();
+        tacf().unwrap();
     });
 
 
-    ///websocket 服务端
+    //websocket 服务端
     ws::listen(format!("127.0.0.1:8084"), |out| {
         Router {
             sender: out,
@@ -153,7 +151,7 @@ fn main() {
     }).unwrap();
 
 
-    let _ = sender_thread.join();
+    let _ = inner_sender_thread.join();
     let _ = tacf_thread.join();
 
 }
