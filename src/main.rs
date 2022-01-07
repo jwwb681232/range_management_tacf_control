@@ -1,6 +1,4 @@
 extern crate ws;
-extern crate chrono;
-extern crate dotenv;
 extern crate redis;
 
 mod websocket;
