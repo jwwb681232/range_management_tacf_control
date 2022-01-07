@@ -2,12 +2,12 @@ use std::io::{Read, Write};
 use std::net::TcpStream;
 use redis::Commands;
 use serde_json::Value;
-use crate::tacf::commands::{load_scenario, nop_ack, remote_controller_status, request_scenario_infos, request_scenario_list};
+use crate::tacf::commands::{load_scenario, nop_ack, remote_controller_status, request_scenario_infos, request_scenario_list, request_training_results, start_scenario, start_training, stop_scenario, stop_training, unload_scenario};
 use crate::tacf::response::response_to_jsons;
 
 pub fn run() -> std::io::Result<()> {
     let mut stream = TcpStream::connect("127.0.0.1:1001").expect("Couldn't connect to the server...");
-    let mut buffer = [0; 1024];
+    let mut buffer = [0; 65535];
     let input = remote_controller_status();
     stream.write(&*input)?;
 
@@ -37,6 +37,36 @@ pub fn run() -> std::io::Result<()> {
 
             if payload == "RequestScenarioInfos".to_string() {
                 let input = request_scenario_infos();
+                redis_thread_stream.write(&*input).unwrap();
+            }
+
+            if payload == "StartTraining".to_string() {
+                let input = start_training();
+                redis_thread_stream.write(&*input).unwrap();
+            }
+
+            if payload == "StartScenario".to_string() {
+                let input = start_scenario();
+                redis_thread_stream.write(&*input).unwrap();
+            }
+
+            if payload == "StopScenario".to_string() {
+                let input = stop_scenario();
+                redis_thread_stream.write(&*input).unwrap();
+            }
+
+            if payload == "StopTraining".to_string() {
+                let input = stop_training();
+                redis_thread_stream.write(&*input).unwrap();
+            }
+
+            if payload == "RequestTrainingResults".to_string() {
+                let input = request_training_results();
+                redis_thread_stream.write(&*input).unwrap();
+            }
+
+            if payload == "UnloadScenario".to_string() {
+                let input = unload_scenario();
                 redis_thread_stream.write(&*input).unwrap();
             }
 
