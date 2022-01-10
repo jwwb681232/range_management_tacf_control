@@ -74,6 +74,7 @@ pub fn run() -> std::io::Result<()> {
     });
 
     loop {
+        // todo 如果最后不是 3 as u8 这个byte就继续写入buffer
         let offset = stream.read(&mut buffer[..])?;
 
         let response = String::from_utf8_lossy(&buffer[..offset]).to_string();
