@@ -72,7 +72,7 @@ impl ws::Handler for TacfControl {
         let _: () = con.publish("websocket_to_tacf", msg.to_string()).unwrap();
 
         //println!("websocket send: {}", msg.to_string());
-        log!(Level::Warn, "websocket send: {}",  msg.to_string());
+        //log!(Level::Warn, "websocket send: {}",  msg.to_string());
         //self.ws.broadcast(msg)
 
         if msg.to_string() != "RequestScenarioList".to_string() {

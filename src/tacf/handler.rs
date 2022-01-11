@@ -7,7 +7,7 @@ use crate::tacf::response::response_to_jsons;
 
 pub fn run() -> std::io::Result<()> {
     let mut stream = TcpStream::connect("127.0.0.1:1001").expect("Couldn't connect to the server...");
-    let mut buffer = [0; 65535];
+    //let mut buffer = [0; 65535];
     let input = remote_controller_status();
     stream.write(&*input)?;
 
@@ -73,15 +73,31 @@ pub fn run() -> std::io::Result<()> {
         }
     });
 
+    //let mut buffer = [0; 65535];
+    let mut incoming_bytes = Vec::<u8>::new();
+
+    loop {
+        let mut incoming_trunk = vec![0u8; 1024*8];
+        let _bytes_count = stream.read(&mut incoming_trunk)?;
+        println!("{}",_bytes_count);
+        if _bytes_count == 0 {
+            break;
+        } else {
+            incoming_bytes.append(&mut incoming_trunk);
+        }
+    }
+
     loop {
         // todo 如果最后不是 3 as u8 这个byte就继续写入buffer
-        let offset = stream.read(&mut buffer[..])?;
+        //let offset = stream.read(&mut buffer[..])?;
 
-        let response = String::from_utf8_lossy(&buffer[..offset]).to_string();
+        /*let len = incoming_bytes.len();
+        if len > 0 {
+            println!("{}",len);
+        }*/
 
-        if response.len() > 0 {
-            let items = buffer[..offset].to_vec().clone();
-            let json_response = response_to_jsons(items);
+        if incoming_bytes.len() > 0 {
+            let json_response = response_to_jsons(incoming_bytes.clone());
 
             for item in json_response {
 
@@ -104,5 +120,32 @@ pub fn run() -> std::io::Result<()> {
                 }
             }
         }
+
+        //let response = String::from_utf8_lossy(&incoming_bytes).to_string();
+
+        /*if incoming_bytes.len() > 0 {
+            let json_response = response_to_jsons(incoming_bytes);
+
+            for item in json_response {
+
+                let _: () = con.publish("tacf_to_websocket", &item).unwrap();
+
+                let decode_item: Value = serde_json::from_str(&item).unwrap();
+
+                if decode_item["CommandId"] == 0 {
+                    let input = nop_ack();
+                    stream.write(&*input)?;
+                }
+
+                if decode_item["CommandId"] == 1001 {
+                }
+
+                if decode_item["CommandId"] == 1002 {
+                }
+
+                if decode_item["CommandId"] == 1003 {
+                }
+            }
+        }*/
     }
 }
