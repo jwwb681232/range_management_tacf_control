@@ -1,9 +1,8 @@
 use std::io::{Read, Write};
 use std::net::TcpStream;
-use std::time::Duration;
 use redis::Commands;
 use serde_json::Value;
-use crate::tacf::commands::{load_scenario, nop_ack, remote_controller_status, request_scenario_infos, request_scenario_list, request_training_results, start_scenario, start_training, stop_scenario, stop_training, unload_scenario};
+use crate::tacf::commands::{load_scenario, nop_ack, remote_controller_status, request_scenario_infos, request_scenario_list, request_status, request_training_results, start_scenario, start_training, stop_scenario, stop_training, unload_scenario};
 use crate::tacf::response::response_to_jsons;
 
 pub fn run() -> std::io::Result<()> {
@@ -24,6 +23,11 @@ pub fn run() -> std::io::Result<()> {
 
         loop {
             let payload:String = pubsub.get_message().unwrap().get_payload().unwrap();
+
+            if payload == "RequestStatus".to_string() {
+                let input = request_status();
+                redis_thread_stream.write(&*input).unwrap();
+            }
 
             if payload == "RequestScenarioList".to_string() {
                 let input = request_scenario_list();
@@ -78,19 +82,14 @@ pub fn run() -> std::io::Result<()> {
     loop {
         let mut _buffer = [0; 655350];
 
-        // todo loop循环 避免只获取最后一次传输
         let offset = stream.read(&mut _buffer[..])?;
+        buffer.append(&mut _buffer[..offset].to_vec());
+
         if _buffer[offset-1] != (3 as u8) {
             continue;
-        }else{
-            buffer.append(&mut _buffer[..offset].to_vec());
         }
-        // end todo
 
         let response = String::from_utf8_lossy(&buffer[..buffer.len()]).to_string();
-
-        println!("{}",response.len());
-        println!("{}\n",response);
 
         if response.len() > 0 {
             let items = buffer[..buffer.len()].to_vec().clone();

@@ -1,4 +1,3 @@
-use log::{Level, log};
 use redis::Commands;
 
 pub struct Router {
@@ -71,14 +70,11 @@ impl ws::Handler for TacfControl {
         let mut con = client.get_connection().unwrap();
         let _: () = con.publish("websocket_to_tacf", msg.to_string()).unwrap();
 
-        //println!("websocket send: {}", msg.to_string());
-        //log!(Level::Warn, "websocket send: {}",  msg.to_string());
-        //self.ws.broadcast(msg)
-
-        if msg.to_string() != "RequestScenarioList".to_string() {
+        let array = vec!["RequestStatus","RequestScenarioList","LoadScenario","RequestScenarioInfos","StartTraining","StartScenario","StopScenario","StopTraining","RequestTrainingResults","UnloadScenario"];
+        if !array.contains(&msg.to_string().as_str()) {
             self.ws.broadcast(msg).unwrap();
-            //self.ws.close(ws::CloseCode::Normal).unwrap()
         }
+
         Ok(())
     }
 
