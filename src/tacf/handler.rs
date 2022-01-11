@@ -1,5 +1,6 @@
 use std::io::{Read, Write};
 use std::net::TcpStream;
+use std::time::Duration;
 use redis::Commands;
 use serde_json::Value;
 use crate::tacf::commands::{load_scenario, nop_ack, remote_controller_status, request_scenario_infos, request_scenario_list, request_training_results, start_scenario, start_training, stop_scenario, stop_training, unload_scenario};
@@ -7,7 +8,6 @@ use crate::tacf::response::response_to_jsons;
 
 pub fn run() -> std::io::Result<()> {
     let mut stream = TcpStream::connect("127.0.0.1:1001").expect("Couldn't connect to the server...");
-    //let mut buffer = [0; 65535];
     let input = remote_controller_status();
     stream.write(&*input)?;
 
@@ -73,31 +73,28 @@ pub fn run() -> std::io::Result<()> {
         }
     });
 
-    //let mut buffer = [0; 65535];
-    let mut incoming_bytes = Vec::<u8>::new();
+    let mut buffer = Vec::new();
 
     loop {
-        let mut incoming_trunk = vec![0u8; 1024*8];
-        let _bytes_count = stream.read(&mut incoming_trunk)?;
-        println!("{}",_bytes_count);
-        if _bytes_count == 0 {
-            break;
-        } else {
-            incoming_bytes.append(&mut incoming_trunk);
+        let mut _buffer = [0; 655350];
+
+        // todo loop循环 避免只获取最后一次传输
+        let offset = stream.read(&mut _buffer[..])?;
+        if _buffer[offset-1] != (3 as u8) {
+            continue;
+        }else{
+            buffer.append(&mut _buffer[..offset].to_vec());
         }
-    }
+        // end todo
 
-    loop {
-        // todo 如果最后不是 3 as u8 这个byte就继续写入buffer
-        //let offset = stream.read(&mut buffer[..])?;
+        let response = String::from_utf8_lossy(&buffer[..buffer.len()]).to_string();
 
-        /*let len = incoming_bytes.len();
-        if len > 0 {
-            println!("{}",len);
-        }*/
+        println!("{}",response.len());
+        println!("{}\n",response);
 
-        if incoming_bytes.len() > 0 {
-            let json_response = response_to_jsons(incoming_bytes.clone());
+        if response.len() > 0 {
+            let items = buffer[..buffer.len()].to_vec().clone();
+            let json_response = response_to_jsons(items);
 
             for item in json_response {
 
@@ -120,32 +117,6 @@ pub fn run() -> std::io::Result<()> {
                 }
             }
         }
-
-        //let response = String::from_utf8_lossy(&incoming_bytes).to_string();
-
-        /*if incoming_bytes.len() > 0 {
-            let json_response = response_to_jsons(incoming_bytes);
-
-            for item in json_response {
-
-                let _: () = con.publish("tacf_to_websocket", &item).unwrap();
-
-                let decode_item: Value = serde_json::from_str(&item).unwrap();
-
-                if decode_item["CommandId"] == 0 {
-                    let input = nop_ack();
-                    stream.write(&*input)?;
-                }
-
-                if decode_item["CommandId"] == 1001 {
-                }
-
-                if decode_item["CommandId"] == 1002 {
-                }
-
-                if decode_item["CommandId"] == 1003 {
-                }
-            }
-        }*/
+        buffer.clear();
     }
 }
