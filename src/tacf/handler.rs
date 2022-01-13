@@ -1,6 +1,7 @@
 use std::io::{Read, Write};
 use std::net::TcpStream;
 use redis::Commands;
+use regex::Regex;
 use serde_json::Value;
 use crate::tacf::commands::{load_scenario, nop_ack, remote_controller_status, request_scenario_infos, request_scenario_list, request_status, request_training_results, start_scenario, start_training, stop_scenario, stop_training, unload_scenario};
 use crate::tacf::response::response_to_jsons;
@@ -34,8 +35,9 @@ pub fn run() -> std::io::Result<()> {
                 redis_thread_stream.write(&*input).unwrap();
             }
 
-            if payload == "LoadScenario".to_string() {
-                let input = load_scenario();
+            let re = Regex::new(r"LoadScenario:\d{1,}").unwrap();
+            if let Some(matched) = re.find(payload.as_str()){
+                let input = load_scenario(matched);
                 redis_thread_stream.write(&*input).unwrap();
             }
 
