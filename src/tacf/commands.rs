@@ -55,7 +55,7 @@ pub fn load_scenario(matched:Match) -> Vec<u8> {
     println!("[{} Received client command]: {}",Local::now().format("%Y-%m-%d %H:%M:%S"),matched.as_str());
 
     let command_str = matched.as_str().split(":").collect::<Vec<&str>>();
-    let scenario_index = command_str.last().unwrap().parse::<i32>().unwrap();
+    let scenario_index = command_str.last().unwrap().parse::<String>().unwrap();
 
     let mut input = vec![2 as u8, 0 as u8, 50 as u8, 0 as u8];
     let messages = format!("{}{}{}", r#"{"CommandId":2100,"ScenarioIndex":"#, scenario_index,r#","OnlineMode":false,"MessageId":"TACF-055209012-00003"}"#);
