@@ -35,7 +35,7 @@ pub fn run() -> std::io::Result<()> {
                 redis_thread_stream.write(&*input).unwrap();
             }
 
-            let re = Regex::new(r"LoadScenario:\d{1,}").unwrap();
+            let re = Regex::new(r"LoadScenario:\S{1,}").unwrap();
             if let Some(matched) = re.find(payload.as_str()){
                 let input = load_scenario(matched);
                 redis_thread_stream.write(&*input).unwrap();
