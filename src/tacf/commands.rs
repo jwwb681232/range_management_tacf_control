@@ -58,7 +58,7 @@ pub fn load_scenario(matched:Match) -> Vec<u8> {
     let scenario_index = command_str.last().unwrap().parse::<String>().unwrap();
 
     let mut input = vec![2 as u8, 0 as u8, 50 as u8, 0 as u8];
-    let messages = format!("{}{}{}", r#"{"CommandId":2100,"ScenarioIndex":""#, scenario_index,r#"","OnlineMode":false,"MessageId":"TACF-055209012-00003"}"#);
+    let messages = format!("{}{}{}", r#"{"CommandId":2100,"ScenarioIndex":""#, scenario_index,r#"","OnlineMode":true,"MessageId":"TACF-055209012-00003"}"#);
     let messages = messages.as_bytes().to_vec();
 
     for message in messages {
